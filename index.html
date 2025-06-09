@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerar Portaria</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.4.0/docx.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div class="container">
+    <!-- Formulário -->
+    <div class="form-container">
+      <h2>Dados da Nomeação</h2>
+      <form id="formulario">
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" required />
+
+        <label for="portaria">Portaria:</label>
+        <input type="text" id="portaria" placeholder="Ex: 1272" required />
+
+        <label for="cpf">CPF:</label>
+        <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14" required />
+
+        <label for="cargo">Cargo:</label>
+        <input type="text" id="cargo" placeholder="Ex: Assessor III" required />
+
+        <label for="simbolo">Símbolo:</label>
+        <input type="text" id="simbolo" placeholder="Ex: CC8" required />
+
+        <label for="secretaria">Secretaria:</label>
+        <input type="text" id="secretaria" placeholder="Ex: Secretaria de Educação" required />
+
+        <label for="data">Data:</label>
+        <input type="date" id="data" required />
+
+        <button type="button" onclick="gerarPDF()">Baixar PDF da Prévia</button>
+      </form>
+    </div>
+
+    <!-- Prévia -->
+    <div class="preview-container" id="preview">
+      <img src="images/pref.png" alt="Logo da Prefeitura" class="logo-prefeitura" />
+
+      <p class="center titulo-gabinete"><strong><u>SECRETARIA&nbsp;&nbsp; DE &nbsp;&nbsp;GOVERNO&nbsp; &nbsp;E &nbsp;&nbsp;GABINETE&nbsp;&nbsp;</u></strong></p>
+      <p class="center"><strong>PORTARIA Nº <span id="p-portaria">0000</span>/2025</strong></p>
+
+      <p>
+        <strong>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;O PREFEITO DO MUNICÍPIO DO PAULISTA – ESTADO DE PERNAMBUCO
+        </strong>, no uso das atribuições institucionais que lhe são conferidas em função do cargo e com amparo nos preceitos contidos na Lei Orgânica do Município,
+      </p>
+
+      <p class="center"><strong>R E S O L V E:</strong></p>
+
+      <p>
+        <strong>       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NOMEAR</strong> o(a) Sr(a). <strong><span id="p-nome">NOME COMPLETO</span></strong> sob o CPF nº <span id="p-cpf">xxx.xxx.xxx-xx</span>, para o exercício do cargo de provimento em comissão de
+        <strong><span id="p-cargo">CARGO</span></strong>, símbolo “<strong><span id="p-simbolo">CC8</span></strong>”, lotado na <strong><span id="p-secretaria">SECRETARIA</span></strong>, a partir da presente data.
+      </p>
+
+      <p class="center">Registra-se</p>
+      <p class="center">Publique-se</p>
+      <p class="center" id="p-data">Paulista, DATA ATUAL</p>
+
+      <p class="center">
+      <strong>SEVERINO&nbsp;&nbsp;RAMOS&nbsp;&nbsp; DE &nbsp;&nbsp;SANTANA&nbsp;&nbsp;<br /><br />Prefeito</strong>
+      </p>
+
+      <div class="rodape">
+        <hr />
+        <p class="rodape-texto">
+          Praça Agamenon Magalhães, s/nº - Centro – Paulista – PE<br />
+          CNPJ: 10.408.839/0001-17
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function mascararCPF(cpf) {
+      cpf = cpf.replace(/\D/g, '');
+      if (cpf.length !== 11) return 'CPF INVÁLIDO';
+      return `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9, 11)}`;
+    }
+
+    function atualizarDataPrevia(dataInput) {
+      const meses = [
+        'janeiro',
+        'fevereiro',
+        'março',
+        'abril',
+        'maio',
+        'junho',
+        'julho',
+        'agosto',
+        'setembro',
+        'outubro',
+        'novembro',
+        'dezembro',
+      ];
+
+      const data = new Date(dataInput);
+      const dia = String(data.getDate()).padStart(2, '0');
+      const mes = meses[data.getMonth()];
+      const ano = data.getFullYear();
+
+      document.getElementById('p-data').textContent = `Paulista, ${dia} de ${mes} de ${ano}.`;
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const hoje = new Date();
+      const yyyy = hoje.getFullYear();
+      const mm = String(hoje.getMonth() + 1).padStart(2, '0');
+      const dd = String(hoje.getDate()).padStart(2, '0');
+      const dataFormatada = `${yyyy}-${mm}-${dd}`;
+      const inputData = document.getElementById('data');
+      inputData.value = dataFormatada;
+      atualizarDataPrevia(dataFormatada);
+    });
+
+    const campos = ['nome', 'cpf', 'cargo', 'simbolo', 'secretaria', 'portaria', 'data'];
+    campos.forEach((id) => {
+      document.getElementById(id).addEventListener('input', function () {
+        const valor = this.value || id.toUpperCase();
+
+        if (id === 'cpf') {
+          document.getElementById('p-cpf').textContent = mascararCPF(valor);
+        } else if (id === 'data') {
+          atualizarDataPrevia(valor);
+        } else {
+          document.getElementById('p-' + id).textContent = valor;
+        }
+      });
+    });
+
+   function gerarPDF() {
+  const element = document.getElementById('preview');
+  const nome = document.getElementById('nome').value || 'documento';
+
+  const opt = {
+    margin: 0,
+    filename: `portaria_${nome.replace(/\s+/g, '_').toLowerCase()}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 3 },
+    jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
+  };
+
+  html2pdf().set(opt).from(element).save();
+}
+</script>
+</body>
+</html>
