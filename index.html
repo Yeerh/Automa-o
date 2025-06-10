@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link rel="stylesheet" href="css/style.css" />
 </head>
+
 <body>
 
   <div class="container">
@@ -36,7 +38,7 @@
         <label for="data">Data:</label>
         <input type="date" id="data" required />
 
-        <button type="button" onclick="gerarPDF()">Baixar PDF da Prévia</button>
+        <button type="button" onclick="enviarPortaria()">Baixar PDF da Prévia</button>
       </form>
     </div>
 
@@ -44,20 +46,25 @@
     <div class="preview-container" id="preview">
       <img src="images/pref.png" alt="Logo da Prefeitura" class="logo-prefeitura" />
 
-      <p class="center titulo-gabinete"><strong><u>SECRETARIA&nbsp;&nbsp; DE &nbsp;&nbsp;GOVERNO&nbsp; &nbsp;E &nbsp;&nbsp;GABINETE&nbsp;&nbsp;</u></strong></p>
+      <p class="center titulo-gabinete"><strong><u>SECRETARIA&nbsp;&nbsp; DE &nbsp;&nbsp;GOVERNO&nbsp; &nbsp;E
+            &nbsp;&nbsp;GABINETE&nbsp;&nbsp;</u></strong></p>
       <p class="center"><strong>PORTARIA Nº <span id="p-portaria">0000</span>/2025</strong></p>
 
       <p>
         <strong>
           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;O PREFEITO DO MUNICÍPIO DO PAULISTA – ESTADO DE PERNAMBUCO
-        </strong>, no uso das atribuições institucionais que lhe são conferidas em função do cargo e com amparo nos preceitos contidos na Lei Orgânica do Município,
+        </strong>, no uso das atribuições institucionais que lhe são conferidas em função do cargo e com amparo nos
+        preceitos contidos na Lei Orgânica do Município,
       </p>
 
       <p class="center"><strong>R E S O L V E:</strong></p>
 
       <p>
-        <strong>       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NOMEAR</strong> o(a) Sr(a). <strong><span id="p-nome">NOME COMPLETO</span></strong> sob o CPF nº <span id="p-cpf">xxx.xxx.xxx-xx</span>, para o exercício do cargo de provimento em comissão de
-        <strong><span id="p-cargo">CARGO</span></strong>, símbolo “<strong><span id="p-simbolo">CC8</span></strong>”, lotado na <strong><span id="p-secretaria">SECRETARIA</span></strong>, a partir da presente data.
+        <strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NOMEAR</strong> o(a) Sr(a). <strong><span
+            id="p-nome">NOME COMPLETO</span></strong> sob o CPF nº <span id="p-cpf">xxx.xxx.xxx-xx</span>, para o
+        exercício do cargo de provimento em comissão de
+        <strong><span id="p-cargo">CARGO</span></strong>, símbolo “<strong><span id="p-simbolo">CC8</span></strong>”,
+        lotado na <strong><span id="p-secretaria">SECRETARIA</span></strong>, a partir da presente data.
       </p>
 
       <p class="center">Registra-se</p>
@@ -65,7 +72,7 @@
       <p class="center" id="p-data">Paulista, DATA ATUAL</p>
 
       <p class="center">
-      <strong>SEVERINO&nbsp;&nbsp;RAMOS&nbsp;&nbsp; DE &nbsp;&nbsp;SANTANA&nbsp;&nbsp;<br /><br />Prefeito</strong>
+        <strong>SEVERINO&nbsp;&nbsp;RAMOS&nbsp;&nbsp; DE &nbsp;&nbsp;SANTANA&nbsp;&nbsp;<br /><br />Prefeito</strong>
       </p>
 
       <div class="rodape">
@@ -78,14 +85,51 @@
     </div>
   </div>
 
-  <script>
-    function mascararCPF(cpf) {
-      cpf = cpf.replace(/\D/g, '');
-      if (cpf.length !== 11) return 'CPF INVÁLIDO';
-return cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, 'xxx.$2.xxx-$4');    }
+<script>
+async function enviarPortaria() {
+    const formData = {
+        nome: document.getElementById('nome').value,
+        portaria: document.getElementById('portaria').value,
+        cpf: document.getElementById('cpf').value.replace(/\D/g, ''),
+        cargo: document.getElementById('cargo').value,
+        simbolo: document.getElementById('simbolo').value,
+        secretaria: document.getElementById('secretaria').value,
+        data: document.getElementById('data').value,
+    };
 
-    function atualizarDataPrevia(dataInput) {
-      const meses = [
+    try {
+        const response = await fetch('http://localhost:8080/portaria', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Erro ao enviar portaria');
+        }
+
+        const result = await response.json();
+        alert('Portaria criada com sucesso!');
+        console.log('Resposta do servidor:', result);
+        gerarPDF();
+    } catch (error) {
+        console.error('Erro ao enviar portaria:', error);
+        alert('Erro ao criar portaria: ' + error.message);
+        // Do not generate PDF if an error occurs
+    }
+}
+
+function mascararCPF(cpf) {
+    cpf = cpf.replace(/\D/g, '');
+    if (cpf.length !== 11) return 'CPF INVÁLIDO';
+    return cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, 'xxx.$2.xxx-$4');
+}
+
+function atualizarDataPrevia(dataInput) {
+    const meses = [
         'janeiro',
         'fevereiro',
         'março',
@@ -98,56 +142,57 @@ return cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, 'xxx.$2.xxx-$4');    }
         'outubro',
         'novembro',
         'dezembro',
-      ];
+    ];
 
-      const data = new Date(dataInput);
-      const dia = String(data.getDate()).padStart(2, '0');
-      const mes = meses[data.getMonth()];
-      const ano = data.getFullYear();
+    const data = new Date(dataInput);
+    const dia = String(data.getDate()).padStart(2, '0');
+    const mes = meses[data.getMonth()];
+    const ano = data.getFullYear();
 
-      document.getElementById('p-data').textContent = `Paulista, ${dia} de ${mes} de ${ano}.`;
-    }
+    document.getElementById('p-data').textContent = `Paulista, ${dia} de ${mes} de ${ano}.`;
+}
 
-    window.addEventListener('DOMContentLoaded', () => {
-      const hoje = new Date();
-      const yyyy = hoje.getFullYear();
-      const mm = String(hoje.getMonth() + 1).padStart(2, '0');
-      const dd = String(hoje.getDate()).padStart(2, '0');
-      const dataFormatada = `${yyyy}-${mm}-${dd}`;
-      const inputData = document.getElementById('data');
-      inputData.value = dataFormatada;
-      atualizarDataPrevia(dataFormatada);
-    });
+window.addEventListener('DOMContentLoaded', () => {
+    const hoje = new Date();
+    const yyyy = hoje.getFullYear();
+    const mm = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoje.getDate()).padStart(2, '0');
+    const dataFormatada = `${yyyy}-${mm}-${dd}`;
+    const inputData = document.getElementById('data');
+    inputData.value = dataFormatada;
+    atualizarDataPrevia(dataFormatada);
+});
 
-    const campos = ['nome', 'cpf', 'cargo', 'simbolo', 'secretaria', 'portaria', 'data'];
-    campos.forEach((id) => {
-      document.getElementById(id).addEventListener('input', function () {
+const campos = ['nome', 'cpf', 'cargo', 'simbolo', 'secretaria', 'portaria', 'data'];
+campos.forEach((id) => {
+    document.getElementById(id).addEventListener('input', function () {
         const valor = this.value || id.toUpperCase();
 
         if (id === 'cpf') {
-          document.getElementById('p-cpf').textContent = mascararCPF(valor);
+            document.getElementById('p-cpf').textContent = mascararCPF(valor);
         } else if (id === 'data') {
-          atualizarDataPrevia(valor);
+            atualizarDataPrevia(valor);
         } else {
-          document.getElementById('p-' + id).textContent = valor;
+            document.getElementById('p-' + id).textContent = valor;
         }
-      });
     });
+});
 
-   function gerarPDF() {
-  const element = document.getElementById('preview');
-  const nome = document.getElementById('nome').value || 'documento';
+function gerarPDF() {
+    const element = document.getElementById('preview');
+    const nome = document.getElementById('nome').value || 'documento';
 
-  const opt = {
-    margin: 0,
-    filename: `portaria_${nome.replace(/\s+/g, '_').toLowerCase()}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 3 },
-    jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
-  };
+    const opt = {
+        margin: 0,
+        filename: `portaria_${nome.replace(/\s+/g, '_').toLowerCase()}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 3 },
+        jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
+    };
 
-  html2pdf().set(opt).from(element).save();
+    html2pdf().set(opt).from(element).save();
 }
 </script>
 </body>
+
 </html>
