@@ -17,6 +17,8 @@ app.post("/portaria", async (req, res) => {
             return res.status(400).json({ error: "Todos os campos são obrigatórios" });
         }
 
+        console.log(    )
+
         // Verifica se a portaria já existe
         const portaExiste = await prisma.portaria.findFirst({ where: { portaria } });
 
